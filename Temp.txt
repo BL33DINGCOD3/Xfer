@@ -1,0 +1,80 @@
+// main.cpp
+#include <QApplication>
+#include <QMainWindow>
+#include <QPushButton>
+#include <QVBoxLayout>
+#include <QPalette>
+#include <QStyleFactory>
+#include <QSettings>
+#include <QOperatingSystemVersion>
+
+class MainWindow : public QMainWindow
+{
+    Q_OBJECT
+
+public:
+    MainWindow(QWidget *parent = nullptr) : QMainWindow(parent)
+    {
+        // Set up the UI with a button to demonstrate theme usage
+        QPushButton *toggleThemeButton = new QPushButton("Use System Theme", this);
+        QVBoxLayout *layout = new QVBoxLayout();
+        layout->addWidget(toggleThemeButton);
+
+        QWidget *centralWidget = new QWidget(this);
+        centralWidget->setLayout(layout);
+        setCentralWidget(centralWidget);
+
+        setWindowTitle("Qt System Theme Example");
+        resize(400, 200);
+
+        // Apply the system theme by default on startup
+        applySystemTheme();
+    }
+
+private:
+    void applySystemTheme()
+    {
+        // Detect if the system is using a dark theme
+        bool isDarkMode = isSystemDarkTheme();
+
+        if (isDarkMode) {
+            // Apply dark theme palette from the system
+            qApp->setPalette(qApp->style()->standardPalette());
+        } else {
+            // Apply light theme palette from the system
+            qApp->setPalette(qApp->style()->standardPalette());
+        }
+
+        // Optionally, force system theme style for a native look
+        qApp->setStyle(QStyleFactory::create("Fusion"));
+    }
+
+    bool isSystemDarkTheme()
+    {
+        // Windows specific dark mode detection (Windows 10+)
+        if (QOperatingSystemVersion::currentType() == QOperatingSystemVersion::Windows) {
+            QSettings settings("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize", QSettings::NativeFormat);
+            return settings.value("AppsUseLightTheme", 1).toInt() == 0; // 0 means dark mode, 1 means light mode
+        }
+
+        // macOS dark mode detection (macOS 10.14+ Mojave and later)
+        if (QOperatingSystemVersion::currentType() == QOperatingSystemVersion::MacOS) {
+            QSettings settings("Apple Global Domain", QSettings::NativeFormat);
+            return settings.value("AppleInterfaceStyle", "").toString().toLower() == "dark";
+        }
+
+        // Linux/Other (currently default to light mode)
+        // To detect on KDE/GNOME, we would need additional logic
+        return false;
+    }
+};
+
+int main(int argc, char *argv[])
+{
+    QApplication app(argc, argv);
+    MainWindow window;
+    window.show();
+    return app.exec();
+}
+
+#include "main.moc"
